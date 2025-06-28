@@ -15,4 +15,4 @@ EXPOSE 8080
 ENV ADMIN_USERNAME=Admin
 ENV ADMIN_PASSWORD=pass
 
-CMD ["uv", "run", "gunicorn", "-w", "4", "-b", "0.0.0.0:8080", "main:app"]
+CMD ["uv", "run", "gunicorn", "--timeout", "0", "-w", "4", "-b", "0.0.0.0:8080", "main:app"]
