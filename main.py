@@ -52,7 +52,10 @@ def upload_file(game: str, version: str):
             return redirect(request.url)
         full_path = os.path.join(app.config['UPLOAD_FOLDER'], get_filepath(game, version))
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        file.save(full_path)
+        with open(full_path, "wb") as f:
+            for chunk in file.stream:
+                _ = f.write(chunk)
+        # file.save(full_path)
         return redirect(url_for('finished_upload', game=game, version=version))
     return f'''
     <!doctype html>
