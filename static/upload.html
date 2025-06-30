@@ -1,5 +1,7 @@
 <!doctype html>
+<html>
 <head>
+    <meta charset="UTF-8">
     <title>Upload new ${game}:${version} build</title>
 </head>
 <body>
@@ -26,12 +28,24 @@
             let res;
 
             textProgress.innerText = 'Uploading chunks .. ' + JSON.stringify(index) + '/' + JSON.stringify(end);
-            while (start < file.size) {
-                console.log(end, index);
-                res = await uploadChunk(file.slice(start, start + chunkSize), 5, end, index);
-                start += chunkSize;
-                index += 1;
+            while (start + chunkSize < file.size) {
+                let parallel_upload = [];
+                while (start + chunkSize < file.size && parallel_upload.lenght < 5) {
+                    parallel_upload.push(uploadChunk(file.slice(start, start + chunkSize), 5, end, index));
+                    start += chunkSize;
+                    index += 1;
+                }
+                const ress = await Promise.all(parallel_upload);
+                for (int i = 0; i < ress.lenght; i++) {
+                    if (res_i == null) {
+                        textProgress.innerText = 'Failed, please retry';
+                        return;
+                    }
+                }
                 textProgress.innerText = 'Uploading chunks .. ' + JSON.stringify(index) + '/' + JSON.stringify(end);
+            }
+            if (start < file.size && start + chunkSize <= file.size {
+                res = await uploadChunk(file.slice(start, start + chunkSize), 5, end, index)
             }
             textProgress.innerText = "Uploaded...";
             if (res.redirected) {
@@ -77,3 +91,4 @@
         }
     </script>
 </body>
+</html>
