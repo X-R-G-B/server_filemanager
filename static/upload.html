@@ -30,13 +30,13 @@
             textProgress.innerText = 'Uploading chunks .. ' + JSON.stringify(index) + '/' + JSON.stringify(end);
             while (start + chunkSize < file.size) {
                 let parallel_upload = [];
-                while (start + chunkSize < file.size && parallel_upload.lenght < 5) {
+                while (start + chunkSize < file.size && parallel_upload.length < 5) {
                     parallel_upload.push(uploadChunk(file.slice(start, start + chunkSize), 5, end, index));
                     start += chunkSize;
                     index += 1;
                 }
                 const ress = await Promise.all(parallel_upload);
-                for (let i = 0; i < ress.lenght; i++) {
+                for (let i = 0; i < ress.length; i++) {
                     if (res_i == null) {
                         textProgress.innerText = 'Failed, please retry';
                         return;
