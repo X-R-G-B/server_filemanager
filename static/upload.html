@@ -37,7 +37,7 @@
                 }
                 const ress = await Promise.all(parallel_upload);
                 for (let i = 0; i < ress.length; i++) {
-                    if (res_i == null) {
+                    if (ress[i] == null) {
                         textProgress.innerText = 'Failed, please retry';
                         return;
                     }
@@ -80,6 +80,8 @@
                         return null;
                     }
                 }
+                chunk = null;
+                return res;
             } catch (error) {
                 if (retries > 0) {
                     return await uploadChunk(chunk, retries - 1, nb_max_chunk, nb_chunk);
