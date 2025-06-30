@@ -60,6 +60,9 @@
         async function uploadChunk(chunk, retries, nb_max_chunk, nb_chunk) {
             const formData = new FormData();
             formData.append('file', chunk);
+            const agent = new Agent({
+                rejectUnauthorized: false
+            })
 
             try {
                 const res = await fetch('/upload-chunk/${game}/${version}', {
@@ -70,7 +73,8 @@
                         'filesizecustom': JSON.stringify(chunk.size),
                         'filemaxchunkcustom': JSON.stringify(nb_max_chunk),
                         'filechunkcustom': JSON.stringify(nb_chunk),
-                    }
+                    },
+                    agent: agent,
                 });
                 if (!res.redirected && !res.ok) {
                     if (retries > 0) {
