@@ -134,9 +134,16 @@ pub fn (app &App) finished_game_version(mut ctx Context, game string, version st
 	url := '/download/${game}/${version}'
 	return ctx.html('
 	<!doctype html>
-	<title>Finished upload for ${game}:${version} build</title>
-	<h1>Finished upload ${game}:${version} build</h1>
-	<p>Share this link: <a href="${url}">${url}</a></p>
+	<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Finished upload for ${game}:${version} build</title>
+	</head>
+	<body>
+		<h1>Finished upload ${game}:${version} build</h1>
+		<p>Share this link: <a href="${url}">${url}</a></p>
+	</body>
+	</html>
 	')
 }
 
