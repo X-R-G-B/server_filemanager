@@ -1,0 +1,81 @@
+<!doctype html>
+<head>
+    <title>Upload new ${game}:${version} build</title>
+</head>
+<body>
+    <h1>Upload new ${game}:${version} build</h1>
+    <form method="post" enctype=multipart/form-data id="fileUploadForm">
+        File: <input type="file" name="file" id="fileZip" />
+        <input type="submit" value="Upload" id="btn" />
+    </form>
+    <p id="textProgress"></p>
+    <script>
+        const form = document.getElementById("fileUploadForm");
+        const textProgress = document.getElementById("textProgress");
+        const fileZip = document.getElementById("fileZip");
+        form.addEventListener("submit", handleSubmit);
+
+        async function
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+
+            const file = fileZip.files[0];
+            const chunkSize = 10 * 1024 * 1024; // size of each chunk (10MB)
+            let start = 0;
+            let index = 0;
+            let end = Math.floor(file.size / chunkSize) + ((file.size % chunkSize != 0) ? 1 : 0);
+            let res;
+
+            textProgress.innerText = 'Uploading chunks .. ' + JSON.stringify(index) + '/' + JSON.stringify(end);
+            while (start < file.size) {
+                console.log(end, index);
+                res = await uploadChunk(file.slice(start, start + chunkSize), 5, end, index);
+                start += chunkSize;
+                index += 1;
+                textProgress.innerText = 'Uploading chunks .. ' + JSON.stringify(index) + '/' + JSON.stringify(end);
+            }
+            textProgress.innerText = "Uploaded...";
+            if (res.redirected) {
+                window.location = res.url;
+                return
+            }
+            if (!res.ok) {
+                textProgress.innerText = JSON.stringify(res.status) + ": " + res.statusText + ": " + await res.text();
+            }
+        }
+
+        async function uploadChunk(chunk, retries, nb_max_chunk, nb_chunk) {
+            const formData = new FormData();
+            formData.append('file', chunk);
+
+            try {
+                const res = await fetch('/upload-chunk/${game}/${version}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Authorization': '${auth_header}',
+                        'filesizecustom': JSON.stringify(chunk.size),
+                        'filemaxchunkcustom': JSON.stringify(nb_max_chunk),
+                        'filechunkcustom': JSON.stringify(nb_chunk),
+                    }
+                });
+                if (!res.redirected && !res.ok) {
+                    if (retries > 0) {
+                        return await uploadChunk(chunk, retries - 1, nb_max_chunk, nb_chunk);
+                    } else {
+                        console.error('Failed to upload chunk: ', res.status, res.statusText, await res.text());
+                        return null;
+                    }
+                }
+            } catch (error) {
+                if (retries > 0) {
+                    return await uploadChunk(chunk, retries - 1, nb_max_chunk, nb_chunk);
+                } else {
+                    console.error('Failed to upload chunk: ', error);
+                    return null;
+                }
+            }
+        }
+    </script>
+</body>
