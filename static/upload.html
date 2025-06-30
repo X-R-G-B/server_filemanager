@@ -44,7 +44,7 @@
                 }
                 textProgress.innerText = 'Uploading chunks .. ' + JSON.stringify(index) + '/' + JSON.stringify(end);
             }
-            if (start < file.size && start + chunkSize <= file.size {
+            if (start < file.size && start + chunkSize <= file.size) {
                 res = await uploadChunk(file.slice(start, start + chunkSize), 5, end, index)
             }
             textProgress.innerText = "Uploaded...";
