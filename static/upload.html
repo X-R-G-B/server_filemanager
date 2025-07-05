@@ -21,7 +21,7 @@
             event.preventDefault();
 
             const file = fileZip.files[0];
-            const chunkSize = 10 * 1024 * 1024; // size of each chunk (10MB)
+            const chunkSize = 1024 * 1024; // size of each chunk (1MB)
             let start = 0;
             let index = 0;
             let end = Math.floor(file.size / chunkSize) + ((file.size % chunkSize != 0) ? 1 : 0);
@@ -45,6 +45,7 @@
                 textProgress.innerText = 'Uploading chunks .. ' + JSON.stringify(index) + '/' + JSON.stringify(end);
             }
             if (start < file.size && start + chunkSize <= file.size) {
+                textProgress.innerText = 'Finalizing the file... (this can take some time)';
                 res = await uploadChunk(file.slice(start, start + chunkSize), 5, end, index)
             }
             textProgress.innerText = "Uploaded...";

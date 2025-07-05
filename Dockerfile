@@ -1,31 +1,21 @@
-FROM debian:12-slim AS base
+FROM python:3.12-slim-bookworm
 
-RUN apt-get update -y \
-    && apt-get upgrade -y \
-    && apt-get install -y \
-        libssl-dev
-
-FROM base AS builder
-
-RUN apt-get install -y \
-        gcc \
-        make \
-        git
-RUN git clone --depth=1 https://github.com/vlang/v /v
-RUN make -C /v
-RUN mkdir /app
-COPY ./main.v /app/main.v
-COPY ./v.mod /app/v.mod
-COPY ./static/ /app/static
-RUN cd /app && /v/v -prod -d use_openssl -o server_filemanager .
-
-FROM base AS production
-
+RUN mkdir /datas
 RUN mkdir /app
 WORKDIR /app
-RUN mkdir /datas
-COPY --from=builder /app/server_filemanager /app/server_filemanager
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+COPY ./pyproject.toml /app/pyproject.toml
+COPY ./uv.lock /app/uv.lock
+RUN uv sync --locked --compile-bytecode
+
+COPY ./static/ /app/static
+COPY ./main.py /app/main.py
+
 EXPOSE 8080
+
 ENV ADMIN_USERNAME=Admin
 ENV ADMIN_PASSWORD=pass
-CMD ["./server_filemanager"]
+
+CMD ["uv", "run", "gunicorn", "--timeout", "0", "-w", "4", "-b", "0.0.0.0:8080", "main:app"]
