@@ -6,7 +6,7 @@ from functools import wraps
 UPLOAD_FOLDER = '/datas'
 with open('./static/upload.html') as f:
     UPLOAD_HTML_CONTENT = f.read()
-UPLOAD_CHUNK_SIZE = 10 * 1024 * 1024 # 10MB
+UPLOAD_CHUNK_SIZE = 3 * 1024 * 1024 # 10MB
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
