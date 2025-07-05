@@ -83,6 +83,7 @@ def upload_file_chunk(game: str, version: str):
                 with open(full_path_chunk, 'rb') as f_chunk:
                     while chunk := f_chunk.read(1024):
                         _ = f_dest.write(chunk)
+                os.remove(full_path_chunk)
         return redirect(url_for('finished_upload', game=game, version=version))
     return f"Chunk {file_chunk} on {file_max_chunk} uploaded.", 200
 
