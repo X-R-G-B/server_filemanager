@@ -94,7 +94,7 @@ def upload_file(game: str, version: str):
     if auth_header is None:
         flash('Bad auth header')
         return redirect(url_for('upload', game=game, version=version))
-    return get_upload_html_content(game, version, auth_header)
+    return get_upload_html_content(game, version, auth_header, app.config['UPLOAD_CHUNK_SIZE'])
 
 
 @app.route('/download/<game>/<version>', methods=['GET'])

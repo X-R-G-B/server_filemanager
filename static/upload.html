@@ -21,7 +21,7 @@
             event.preventDefault();
 
             const file = fileZip.files[0];
-            const chunkSize = 1024 * 1024; // size of each chunk (1MB)
+            const chunkSize = ${upload_chunk_size};
             let start = 0;
             let index = 0;
             let end = Math.floor(file.size / chunkSize) + ((file.size % chunkSize != 0) ? 1 : 0);
