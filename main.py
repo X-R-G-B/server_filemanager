@@ -3,6 +3,7 @@ from flask import Flask, flash, request, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 from functools import wraps
 import sys
+from multiprocessing import Process
 
 UPLOAD_FOLDER = '/datas'
 with open('./static/upload.html') as f:
@@ -104,7 +105,9 @@ def upload_file_chunk(game: str, version: str):
         for chunk in file.stream:
             _ = f.write(chunk)
     if file_chunk >= file_max_chunk - 1:
-        _ = assemble_upload_chunk(game, version, file_max_chunk)
+        p = Process(target=assemble_upload_chunk, args=(game, version, file_max_chunk), daemon=True)
+        p.start()
+        #_ = assemble_upload_chunk(game, version, file_max_chunk)
         return redirect(url_for('finished_upload', game=game, version=version))
     return f"Chunk {file_chunk} on {file_max_chunk} uploaded.", 200
 
@@ -128,17 +131,18 @@ def download_file(game: str, version: str):
 def finished_upload(game: str, version: str):
     url = url_for('download_file', game=game, version=version)
     return f'''
-	<!doctype html>
-	<html>
-	<head>
-		<meta charset="UTF-8">
-		<title>Finished upload for {game}:{version} build</title>
-	</head>
-	<body>
-		<h1>Finished upload {game}:{version} build</h1>
-		<p>Share this link: <a href="{url}">{url}</a></p>
-	</body>
-	</html>
+    <!doctype html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Finished upload for {game}:{version} build</title>
+    </head>
+    <body>
+        <h1>Finished upload {game}:{version} build</h1>
+        <p>Share this link: <a href="{url}">{url}</a></p>
+        <p>The file will be available in a few minutes</p>
+    </body>
+    </html>
     '''
 
 @app.route('/', methods=['GET'])
