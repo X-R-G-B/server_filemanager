@@ -2,6 +2,7 @@ import os
 from flask import Flask, flash, request, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 from functools import wraps
+import sys
 
 UPLOAD_FOLDER = '/datas'
 with open('./static/upload.html') as f:
@@ -32,8 +33,12 @@ def login_required(f):
 def get_filepath(game: str, version: str) -> str:
     return secure_filename(f"{game}_{version}.zip")
 
+def get_filepath_chunk_root(game: str, version: str) -> tuple[str, str]:
+    return get_filepath(game, version) + '_chunk_', '.part'
+
 def get_filepath_chunk(game: str, version: str, chunk: int) -> str:
-    return get_filepath(game, version) + f'_chunk_{chunk}.part'
+    a, b = get_filepath_chunk_root(game, version)
+    return a + f'{chunk}' + b
 
 def get_upload_html_content(game: str, version: str, auth_header: str, upload_chunk_size: int) -> str:
     content = app.config['UPLOAD_HTML_CONTENT']
@@ -45,6 +50,29 @@ def get_upload_html_content(game: str, version: str, auth_header: str, upload_ch
             .replace('${auth_header}', auth_header)
             .replace('${upload_chunk_size}', str(upload_chunk_size))
     )
+
+def clean_old_upload_chunk(game: str, version: str):
+    print("LOG: clean_old_upload_chunk start...", file=sys.stderr)
+    root_file_prefix, root_file_sufix = get_filepath_chunk_root(game, version)
+    for file in os.listdir(app.config['UPLOAD_FOLDER']):
+        assert isinstance(file, str)
+        if file.startswith(root_file_prefix) and file.endswith(root_file_sufix):
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], file))
+    print("LOG: clean_old_upload_chunk end...", file=sys.stderr)
+
+def assemble_upload_chunk(game: str, version: str, file_max_chunk: int):
+    print("LOG: assemble_upload_chunk start...", file=sys.stderr)
+    full_path = os.path.join(app.config['UPLOAD_FOLDER'], get_filepath(game, version))
+    with open(full_path, 'wb') as f_dest:
+        for i in range(file_max_chunk):
+            full_path_chunk = os.path.join(app.config['UPLOAD_FOLDER'], get_filepath_chunk(game, version, i))
+            if not os.path.isfile(full_path_chunk):
+                return "failed to get all chunk data", 500
+            with open(full_path_chunk, 'rb') as f_chunk:
+                while chunk := f_chunk.read(1024):
+                    _ = f_dest.write(chunk)
+            os.remove(full_path_chunk)
+    print("LOG: assemble_upload_chunk end...", file=sys.stderr)
 
 @app.route('/upload-chunk/<game>/<version>', methods=['POST'])
 @login_required
@@ -68,22 +96,15 @@ def upload_file_chunk(game: str, version: str):
     file_chunk = get_value('filechunkcustom')
     if not isinstance(file_chunk, int):
         return file_chunk
+    if file_chunk == 0:
+        clean_old_upload_chunk(game, version)
     full_path_chunk = os.path.join(app.config['UPLOAD_FOLDER'], get_filepath_chunk(game, version, file_chunk))
     os.makedirs(os.path.dirname(full_path_chunk), exist_ok=True)
     with open(full_path_chunk, 'wb') as f:
         for chunk in file.stream:
             _ = f.write(chunk)
     if file_chunk >= file_max_chunk - 1:
-        full_path = os.path.join(app.config['UPLOAD_FOLDER'], get_filepath(game, version))
-        with open(full_path, 'wb') as f_dest:
-            for i in range(file_max_chunk):
-                full_path_chunk = os.path.join(app.config['UPLOAD_FOLDER'], get_filepath_chunk(game, version, i))
-                if not os.path.isfile(full_path_chunk):
-                    return "failed to get all chunk data", 500
-                with open(full_path_chunk, 'rb') as f_chunk:
-                    while chunk := f_chunk.read(1024):
-                        _ = f_dest.write(chunk)
-                os.remove(full_path_chunk)
+        _ = assemble_upload_chunk(game, version, file_max_chunk)
         return redirect(url_for('finished_upload', game=game, version=version))
     return f"Chunk {file_chunk} on {file_max_chunk} uploaded.", 200
 
